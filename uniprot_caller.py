@@ -1,11 +1,9 @@
-from subprocess import call
 import requests
 import json 
 import pandas as pd 
 
 
-
-def call_for_genes(protein_accession: list) -> dict:
+def send_accessions(protein_accession: list) -> dict:
     """Takes list of Uniprot protein accessions, returns hash map of gene names.
     
     :arg protein_accession: (list)  list of protein accession numbers
@@ -14,10 +12,10 @@ def call_for_genes(protein_accession: list) -> dict:
     """
 
     # join accessions
-    accs = '%2C'.join(protein_accession)
+    accs = "%2C".join(protein_accession)
     
     # include in url
-    base_url = f'https://rest.uniprot.org/uniprotkb/accessions?accessions={accs}'
+    base_url = f"https://rest.uniprot.org/uniprotkb/accessions?accessions={accs}"
     
     # get response
     r = requests.get(base_url)
@@ -31,7 +29,7 @@ def parse_response(uniprot_resp: dict):
     
     :arg unriprot_resp: (dict)  response from uniprot
     
-    :returns:   {accession: gene}
+    :returns:   dict(accession -> gene)
     """
     
     # account for single searches
@@ -46,11 +44,11 @@ def parse_response(uniprot_resp: dict):
 
     for entry in data:
         # grab accession that was passed in
-        val = entry['primaryAccession']
+        val = entry["primaryAccession"]
         
         # some accessions do not have associated genes
         try:
-            found_gene = entry["genes"][0]['geneName']["value"]
+            found_gene = entry["genes"][0]["geneName"]["value"]
         except:
             found_gene = None
             count += 1
@@ -60,18 +58,20 @@ def parse_response(uniprot_resp: dict):
     
     # provide warning
     if count > 0:
-        print(f'{count} protein accessions were not mapped!')
+        print(f"{count} protein accessions were not mapped!")
 
     return lookup
 
 
-if __name__ == '__main__':
-
-
-    data = pd.read_csv(r"C:\Users\graha\Downloads\uniprot-download_true_fields_accession_2Cid_2Cprotein_name_format_ts-2022.08.17-23.06.33.39.tsv", delimiter='\t')
-    test_accs = data['Entry'][:1].tolist()
+if __name__ == "__main__":
+    #grab trial data
+    data = pd.read_csv(r"https://raw.githubusercontent.com/grahamdelafield/uniprot-caller/main/example_uniprot.tsv", delimiter="\t")
+    test_accs = data["Entry"][:500].tolist()
     
-    c = call_for_genes(test_accs)
+    # call
+    c = send_accessions(test_accs)
+    
+    # get genes
     m = parse_response(c)
     print(m)
 
